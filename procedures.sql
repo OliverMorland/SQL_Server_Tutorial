@@ -1,29 +1,31 @@
 USE nass_training;
 GO
 
--- CREATE PROCEDURE usp_top_operations
--- @commodity_name VARCHAR(40),
--- @survey_year INT,
--- @count INT = 5
+-- CREATE PROCEDURE production_by_state_yoy_change
+-- @commodity_name VARCHAR(50) = 'Corn'
 -- AS
 -- BEGIN
--- SELECT TOP (@count)
--- o.operation_name,
--- h.survey_year,
--- c.commodity_name,
+-- WITH state_production AS (
+-- SELECT
 -- s.state_name,
--- (SUM(h.production)) AS total_production
--- FROM operations o
--- JOIN harvests h ON h.operation_id = o.operation_id
--- JOIN commodities c ON c.commodity_id = h.commodity_id
--- JOIN counties co ON co.county_id = o.county_id
--- JOIN states s ON s.state_code = co.state_code
--- WHERE c.commodity_name = @commodity_name AND h.survey_year = @survey_year
--- GROUP BY o.operation_name, h.survey_year, c.commodity_name, s.state_name
--- ORDER BY total_production DESC
+-- c.commodity_name,
+-- h.survey_year,
+-- SUM(h.production) AS state_production,
+-- LAG(SUM(h.production)) OVER (PARTITION BY s.state_name ORDER BY h.survey_year) AS previous_year_production
+-- FROM harvests h
+-- JOIN operations o ON h.operation_id = o.operation_id
+-- JOIN counties co ON o.county_id = co.county_id
+-- JOIN states s ON co.state_code = s.state_code
+-- JOIN commodities c ON h.commodity_id = c.commodity_id
+-- WHERE c.commodity_name = @commodity_name
+-- GROUP BY s.state_name, c.commodity_name, h.survey_year
+-- )
+-- SELECT
+-- state_production.state_name,
+-- (state_production.state_production - state_production.previous_year_production) AS yoy_change
+-- FROM state_production
+-- WHERE (state_production.state_production - state_production.previous_year_production) IS NOT NULL
+-- ORDER BY state_production.state_name, yoy_change DESC;
 -- END;
 
-EXEC usp_top_operations 
-@commodity_name = 'Corn',
-@survey_year = 2023,
-@count = 1000;
+EXEC production_by_state_yoy_change @commodity_name = 'Corn';
